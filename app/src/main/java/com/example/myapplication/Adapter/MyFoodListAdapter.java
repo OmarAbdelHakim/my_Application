@@ -7,9 +7,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.example.myapplication.CallBack.IRecycelerViewClickListner;
+import com.example.myapplication.Database.CartDataSource;
+import com.example.myapplication.Database.CartItem;
+import com.example.myapplication.Database.LocalCartDataSource;
+import com.example.myapplication.Database.cartDatabase;
+import com.example.myapplication.EventBus.CounterCartEvent;
 import com.example.myapplication.EventBus.FoodItemClick;
 import com.example.myapplication.Model.FoodModel;
 import com.example.myapplication.R;
@@ -25,15 +31,26 @@ import androidx.recyclerview.widget.RecyclerView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.schedulers.Schedulers;
 
 public class MyFoodListAdapter extends RecyclerView.Adapter<MyFoodListAdapter.MyViewHolder> {
 
     private Context context;
     private List<FoodModel> foodModelList;
 
+    private CompositeDisposable compositeDisposable;
+    private CartDataSource cartDataSource;
+
     public MyFoodListAdapter(Context context, List<FoodModel> foodModelList) {
         this.context = context;
         this.foodModelList = foodModelList;
+        this.compositeDisposable = new CompositeDisposable();
+        this.cartDataSource = new LocalCartDataSource(cartDatabase.getInstance(context).cartDOA());
+
+
     }
 
     @NonNull
@@ -62,6 +79,41 @@ public class MyFoodListAdapter extends RecyclerView.Adapter<MyFoodListAdapter.My
                 common.selectedFood = foodModelList.get(pos);
                 common.selectedFood.setKey(String.valueOf(pos));
                 EventBus.getDefault().postSticky( new FoodItemClick(true , foodModelList.get(pos)));
+            }
+        });
+
+        holder.img_quick_cart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                CartItem cartItem = new CartItem();
+                cartItem.setUid(common.currentUser.getUid());
+                cartItem.setUserPhone(common.currentUser.getPhone());
+
+                cartItem.setFoodId(foodModelList.get(position).getId());
+                cartItem.setFoodName(foodModelList.get(position).getName());
+                cartItem.setFoodImage(foodModelList.get(position).getImage());
+                cartItem.setFoodPrice(Double.valueOf(String.valueOf(foodModelList.get(position).getPrice())));
+                cartItem.setFoodQuantity(1);
+                cartItem.setFoodExtraPrice(0.0); // Bacause default we not choose size + addon so extra price 0
+                cartItem.setFoodAddon("Default");
+                cartItem.setFoodSize("Default");
+
+                compositeDisposable.add(cartDataSource.insertOrReplaceAll(cartItem)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(()->{
+                    Toast.makeText(context, "Add to Cart succeed", Toast.LENGTH_SHORT).show();
+                    //Here we send Notify to Home Activty to to update counter in Cart
+
+                    EventBus.getDefault().postSticky(new CounterCartEvent(true));
+
+
+                }  , throwable -> {
+                    Toast.makeText(context, "[CART ERROR]"+throwable.getMessage(), Toast.LENGTH_SHORT).show();
+                }));
+
+
+
             }
         });
 
@@ -104,6 +156,7 @@ public class MyFoodListAdapter extends RecyclerView.Adapter<MyFoodListAdapter.My
             itemView.setOnClickListener(this);
 
         }
+
 
         @Override
         public void onClick(View v) {
