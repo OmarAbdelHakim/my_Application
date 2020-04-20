@@ -16,7 +16,7 @@ public abstract class cartDatabase extends RoomDatabase {
     public static cartDatabase getInstance(Context context) {
 
         if(instance == null )
-            instance = Room.databaseBuilder(context , cartDatabase.class , "EatItV2DB1").build();
+            instance = Room.databaseBuilder(context , cartDatabase.class , "EatItV2DB2").build();
         return instance;
     }
 }

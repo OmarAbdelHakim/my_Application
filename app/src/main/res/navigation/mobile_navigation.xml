@@ -45,4 +45,10 @@
         android:name="com.example.myapplication.foodDetailes.FoodDetailesFragment"
         android:label="@string/menu_food_detail"
         tools:layout="@layout/fragment_detailesfood" />
+
+    <fragment
+        android:id="@+id/nav_food_cart"
+        android:name="com.example.myapplication.CartFragment.CartFragment"
+        android:label="@string/menu_cart"
+        tools:layout="@layout/fragment_cartfood" />
 </navigation>

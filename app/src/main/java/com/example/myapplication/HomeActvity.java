@@ -12,6 +12,7 @@ import com.example.myapplication.Database.LocalCartDataSource;
 import com.example.myapplication.Database.cartDatabase;
 import com.example.myapplication.EventBus.CounterCartEvent;
 import com.example.myapplication.EventBus.FoodItemClick;
+import com.example.myapplication.EventBus.HidFABCart;
 import com.example.myapplication.EventBus.categoryClick;
 import com.example.myapplication.common.common;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -41,6 +42,7 @@ public class HomeActvity extends AppCompatActivity {
     private AppBarConfiguration mAppBarConfiguration;
 
     private CartDataSource cartDataSource;
+    NavController navController;
 
 
     @BindView(R.id.fab)
@@ -66,11 +68,12 @@ public class HomeActvity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         FloatingActionButton fab = findViewById(R.id.fab);
+
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+
+                navController.navigate(R.id.nav_food_cart);
             }
         });
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -78,10 +81,10 @@ public class HomeActvity extends AppCompatActivity {
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_home, R.id.nav_menu, R.id.nav_food_list , R.id.nav_food_detail)
+                R.id.nav_home, R.id.nav_menu, R.id.nav_food_list , R.id.nav_food_detail , R.id.nav_food_cart)
                 .setDrawerLayout(drawer)
                 .build();
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+         navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
 
@@ -125,7 +128,7 @@ public class HomeActvity extends AppCompatActivity {
         if(event.isSuccess())
         {
             //Toast.makeText(this, "Click to "+event.getCategoryModel().getName(), Toast.LENGTH_SHORT).show();
-            NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+          //  NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
             navController.navigate(R.id.nav_food_list);
         }
     }
@@ -139,6 +142,17 @@ public class HomeActvity extends AppCompatActivity {
             NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
             navController.navigate(R.id.nav_food_detail);
         }
+    }
+
+    @Subscribe(sticky = true,threadMode = ThreadMode.MAIN)
+    public void onHideFABEvent  (HidFABCart event)
+    {
+        if(event.isHidden())
+        {
+           fab.hide();
+        }
+        else
+            fab.show();
     }
 
 

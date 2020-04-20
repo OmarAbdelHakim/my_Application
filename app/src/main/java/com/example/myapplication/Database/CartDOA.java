@@ -20,11 +20,11 @@ public interface CartDOA {
     @Query("SELECT * FROM Cart WHERE uid=:uid")
     Flowable<List<CartItem>> getAllCart(String uid);
 
-    @Query("SELECT COUNT(*) FROM Cart WHERE uid=:uid ")
+    @Query("SELECT SUM(foodQuantity) FROM Cart WHERE uid=:uid ")
     Single<Integer> countItemInCart (String uid);
 
-    @Query("SELECT SUM(foodPrice*foodQuantity) + (foodExtraPrice*foodQuantity) FROM Cart WHERE uid=:uid ")
-    Single<Long> sumPriceInCart (String uid);
+    @Query("SELECT SUM((foodPrice+foodExtraPrice) * foodQuantity) FROM Cart WHERE uid=:uid ")
+    Single<Double> sumPriceInCart (String uid);
 
     @Query("SELECT * FROM Cart WHERE foodId=:foodId AND uid=:uid ")
     Single<CartItem> getItemInCart (String foodId ,String uid);
@@ -40,6 +40,10 @@ public interface CartDOA {
 
     @Query("DELETE FROM Cart WHERE uid=:uid")
     Single<Integer> cleanCart (String uid);
+
+
+    @Query("SELECT * FROM Cart WHERE foodId=:foodId AND uid=:uid AND foodSize=:foodSize AND foodAddon=:foodAddon")
+    Single<CartItem> getWithAllOptionItemInCart (String uid ,String foodId , String foodSize , String foodAddon);
 
 
 
