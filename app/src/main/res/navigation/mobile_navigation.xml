@@ -50,5 +50,5 @@
         android:id="@+id/nav_food_cart"
         android:name="com.example.myapplication.CartFragment.CartFragment"
         android:label="@string/menu_cart"
-        tools:layout="@layout/fragment_cartfood" />
+        tools:layout="@layout/fragment_cardfood" />
 </navigation>

@@ -2,6 +2,7 @@ package com.example.myapplication.Adapter;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.EventLog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,8 +12,11 @@ import android.widget.TextView;
 import com.asksira.loopingviewpager.LoopingPagerAdapter;
 import com.asksira.loopingviewpager.LoopingViewPager;
 import com.bumptech.glide.Glide;
+import com.example.myapplication.EventBus.BestDealItemClick;
 import com.example.myapplication.Model.BestDealModel;
 import com.example.myapplication.R;
+
+import org.greenrobot.eventbus.EventBus;
 
 import java.util.List;
 
@@ -47,6 +51,13 @@ public class MyBestAdapter extends LoopingPagerAdapter<BestDealModel> {
         //set
         Glide.with(convertView).load(itemList.get(listPosition).getImage()).into(img_best_deal);
         txt_best_deal.setText(itemList.get(listPosition).getName());
+
+        convertView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                EventBus.getDefault().postSticky(new BestDealItemClick(itemList.get(listPosition)));
+            }
+        });
 
 
     }

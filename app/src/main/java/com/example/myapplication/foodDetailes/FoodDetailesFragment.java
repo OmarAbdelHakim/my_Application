@@ -492,12 +492,14 @@ public class FoodDetailesFragment extends Fragment implements TextWatcher {
 
     private void addRatingToFood(float ratingValue) {
 
-        FirebaseDatabase.getInstance()
-                .getReference(common.CATEGORY_REF)
-                .child(common.categorySelected.getMenu_id())// select category
-                .child("foods") // select ArrayList food From This category
-        .child(common.selectedFood.getKey())// because food item is array list so key is index of array list
-        .addListenerForSingleValueEvent(new ValueEventListener() {
+
+
+            FirebaseDatabase.getInstance()
+                    .getReference(common.CATEGORY_REF)
+                    .child(common.categorySelected.getMenu_id())// select category
+                    .child("foods") // select ArrayList food From This category
+            .child(common.selectedFood.getKey())// because food item is array list so key is index of array list
+            .addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
