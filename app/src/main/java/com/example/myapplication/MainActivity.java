@@ -6,10 +6,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import dmax.dialog.SpotsDialog;
 import io.reactivex.disposables.CompositeDisposable;
 
+import android.Manifest;
 import android.accounts.Account;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PermissionInfo;
 import android.os.Bundle;
 import android.os.UserManager;
 import android.preference.PreferenceManager;
@@ -33,6 +35,14 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.MultiplePermissionsReport;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
+import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.util.Arrays;
 import java.util.List;
@@ -85,23 +95,48 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
 
-                FirebaseUser user = firebaseAuth.getCurrentUser();
-
-                if(user!=null)
-
-                {
-
-                    //Aleardy login
-                    CheckUserFromFirbase(user);
-
-                }
-                else
-                {
-                   PhoneLogin();
+               Dexter.withActivity(MainActivity.this).withPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                       .withListener(new PermissionListener() {
+                           @Override
+                           public void onPermissionGranted(PermissionGrantedResponse response) {
 
 
+                               FirebaseUser user = firebaseAuth.getCurrentUser();
 
-                }
+                               if(user!=null)
+
+                               {
+
+                                   //Aleardy login
+                                   CheckUserFromFirbase(user);
+
+                               }
+                               else
+                               {
+                                   PhoneLogin();
+
+                               }
+
+
+
+                           }
+
+                           @Override
+                           public void onPermissionDenied(PermissionDeniedResponse response) {
+
+                               Toast.makeText(MainActivity.this, "You must enable this permission to use (app)", Toast.LENGTH_SHORT).show();
+
+                           }
+
+                           @Override
+                           public void onPermissionRationaleShouldBeShown(PermissionRequest permission, PermissionToken token) {
+
+                           }
+                       }).check();
+
+
+
+
 
             }
         };

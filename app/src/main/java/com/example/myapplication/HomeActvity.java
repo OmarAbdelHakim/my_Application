@@ -404,7 +404,7 @@ public class HomeActvity extends AppCompatActivity  {
 
     private void counterCartItem() {
 
-        cartDataSource.countItemInCart(common.currentUser.getPhone()).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new SingleObserver<Integer>() {
+        cartDataSource.countItemInCart(common.currentUser.getUid()).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new SingleObserver<Integer>() {
             @Override
             public void onSubscribe(Disposable d) {
 
