@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.os.Parcelable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -22,6 +23,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.myapplication.Adapter.MyCartAdapter;
+import com.example.myapplication.CallBack.ILoadTimeFromFirebaseListener;
 import com.example.myapplication.Database.CartDOA;
 import com.example.myapplication.Database.CartDataSource;
 import com.example.myapplication.Database.CartItem;
@@ -31,6 +33,7 @@ import com.example.myapplication.EventBus.CounterCartEvent;
 import com.example.myapplication.EventBus.HidFABCart;
 import com.example.myapplication.EventBus.UpdateItemInCart;
 import com.example.myapplication.Model.CommentModel;
+import com.example.myapplication.Model.order;
 import com.example.myapplication.R;
 import com.example.myapplication.common.MySwipeHelper;
 import com.example.myapplication.common.common;
@@ -42,12 +45,19 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -60,6 +70,7 @@ import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.room.FtsOptions;
 import androidx.room.OnConflictStrategy;
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -68,12 +79,16 @@ import butterknife.Unbinder;
 import io.reactivex.Single;
 import io.reactivex.SingleObserver;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.internal.observers.LambdaObserver;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 
-public class CartFragment extends Fragment {
+public class CartFragment extends Fragment implements ILoadTimeFromFirebaseListener {
+
+    private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     private Parcelable recyclerViewState;
 
@@ -85,6 +100,9 @@ public class CartFragment extends Fragment {
     LocationCallback locationCallback;
     FusedLocationProviderClient fusedLocationProviderClient;
     Location currentLocation;
+
+
+    ILoadTimeFromFirebaseListener listener;
 
     @BindView(R.id.recycler_cart)
     RecyclerView recycler_cart;
@@ -213,7 +231,10 @@ public class CartFragment extends Fragment {
             @Override
             public void onClick(DialogInterface dialogInterface, int which) {
 
-                Toast.makeText(getContext(), "Implement late!", Toast.LENGTH_SHORT).show();
+               // Toast.makeText(getContext(), "Implement late!", Toast.LENGTH_SHORT).show();
+
+                if(rdi_cod .isChecked())
+                    paymentCOD(edt_address.getText().toString(),edt_comment.getText().toString());
 
             }
         });
@@ -221,6 +242,164 @@ public class CartFragment extends Fragment {
         AlertDialog dialog = builder.create();
         dialog.show();
 
+    }
+
+    private void paymentCOD(String address, String comment) {
+
+compositeDisposable.add(cartDataSource.getAllCart(common.currentUser.getUid())
+.subscribeOn(Schedulers.io())
+.observeOn(AndroidSchedulers.mainThread())
+.subscribe(new Consumer<List<CartItem>>() {
+    @Override
+    public void accept(List<CartItem> cartItems) throws Exception {
+
+
+        //when we have all cart item we will get total price
+
+        cartDataSource.sumPriceInCart(common.currentUser.getUid())
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe(new SingleObserver<Double>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onSuccess(Double totalPrice) {
+
+                double finalPrice = totalPrice; // we will modify this formula for discount late
+                order order = new order();
+                order.setUserId(common.currentUser.getUid());
+                order.setUserName(common.currentUser.getName());
+                order.setUserPhone(common.currentUser.getPhone());
+                order.setShippingAddress(address);
+                order.setComment(comment);
+
+                if(currentLocation != null)
+
+                {
+
+                    order.setLat(currentLocation.getLatitude());
+                    order.setLng(currentLocation.getLongitude());
+                }
+
+                else
+                {
+                    order.setLat(-0.1f);
+                    order.setLng(-0.1f);
+
+
+                }
+                order.setCartItemList(cartItems);
+                order.setTotalPayment(totalPrice);
+                order.setDiscount(0); //Modify with discount late
+                order.setFinalPayment(finalPrice);
+                order.setCod(true);
+                order.setTransactionId("Cash on Delivery");
+
+
+                //Submit this order Object to FireBase
+
+              //  writeOrderToFirebase(order);
+                syncLocationTimeWithGlobalTime(order);
+
+
+
+
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+              //  Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+
+            }
+        });
+
+
+    }
+}, new Consumer<Throwable>() {
+    @Override
+    public void accept(Throwable throwable) throws Exception {
+        Toast.makeText(getContext(), ""+throwable.getMessage(), Toast.LENGTH_SHORT).show();
+    }
+}));
+
+
+    }
+
+    private void syncLocationTimeWithGlobalTime(order order) {
+
+        final DatabaseReference offsetRef =  FirebaseDatabase.getInstance().getReference(".info/serverTimeOffset");
+        offsetRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                long offset = dataSnapshot.getValue(Long.class);
+                long estimateServerTimeWithServerMS = System.currentTimeMillis()+offset; // offset is missing time between your local time and server time
+                SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm");
+                Date resultDate = new Date(estimateServerTimeWithServerMS);
+                Log.d("TEST_DATE " , ""+sdf.format(resultDate));
+
+
+                listener.onLoadTimeSuccess(order , estimateServerTimeWithServerMS);
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                listener.onLoadTimeFailed(databaseError.getMessage());
+
+            }
+        });
+    }
+
+    private void writeOrderToFirebase(order order) {
+
+        FirebaseDatabase.getInstance()
+                .getReference(common.ORDER_REF)
+                .child(common.createOrderNumber())// Create order number with only digit
+                .setValue(order)
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                }).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+
+                // write success
+
+                cartDataSource.cleanCart(common.currentUser.getUid())
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new SingleObserver<Integer>() {
+                            @Override
+                            public void onSubscribe(Disposable d) {
+
+                            }
+
+                            @Override
+                            public void onSuccess(Integer integer) {
+
+                                //clean success
+                                Toast.makeText(getContext(), "Order placed Successfully!", Toast.LENGTH_SHORT).show();
+
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+
+                                Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+
+                            }
+                        });
+
+            }
+        });
     }
 
     private String  getAddressFromLatlag(double latitude, double longitude) {
@@ -265,6 +444,8 @@ public class CartFragment extends Fragment {
         cartViewModel =
                 ViewModelProviders.of(this).get(CartViewModel.class);
         View root = inflater.inflate(R.layout.fragment_cardfood, container, false);
+
+        listener = this;
 
 cartViewModel.initialCartDataSources(getContext());
 cartViewModel.getMutableLiveDataCartItem().observe(getViewLifecycleOwner(), new Observer<List<CartItem>>() {
@@ -404,7 +585,10 @@ cartViewModel.getMutableLiveDataCartItem().observe(getViewLifecycleOwner(), new 
                     public void onError(Throwable e) {
 
                         if(!e.getMessage().contains("Query returned empty"))
-                            Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+                        {
+
+                        }
+                           // Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
 
                     }
                 });
@@ -472,6 +656,7 @@ cartViewModel.getMutableLiveDataCartItem().observe(getViewLifecycleOwner(), new 
             EventBus.getDefault().unregister(this);
         if(fusedLocationProviderClient != null)
             fusedLocationProviderClient.removeLocationUpdates(locationCallback);
+        compositeDisposable.clear();
 
         super.onStop();
     }
@@ -546,10 +731,25 @@ cartViewModel.getMutableLiveDataCartItem().observe(getViewLifecycleOwner(), new 
                     @Override
                     public void onError(Throwable e) {
 
-                        Toast.makeText(getContext(), "[SUM CART]"+e.getMessage(), Toast.LENGTH_SHORT).show();
+                      //  Toast.makeText(getContext(), "[SUM CART]"+e.getMessage(), Toast.LENGTH_SHORT).show();
 
                     }
                 });
+
+    }
+
+    @Override
+    public void onLoadTimeSuccess(order order, long estimateTimeInMs) {
+
+        order.setCreateDatabase(estimateTimeInMs);
+        writeOrderToFirebase(order);
+
+    }
+
+    @Override
+    public void onLoadTimeFailed(String message) {
+
+        Toast.makeText(getContext(), ""+message, Toast.LENGTH_SHORT).show();
 
     }
 }

@@ -17,6 +17,7 @@ import com.example.myapplication.Model.UserModel;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Random;
 
 public class common {
     public static final String POPULAR_CATEGORY_REF = "MostPopular";
@@ -25,6 +26,7 @@ public class common {
     public static final int FULL_WIDTH_COLUMN = 1;
     public static final String CATEGORY_REF = "Category";
     public static final String COMMENT_REF = "Comments";
+    public static final String ORDER_REF = "Orders";
     public static String User_Refrences = "Users";
 
     public static UserModel currentUser;
@@ -90,5 +92,12 @@ public class common {
         builder.append(spannableString);
         textView.setText(builder , TextView.BufferType.SPANNABLE);
 
+    }
+
+    public static String createOrderNumber() {
+        return new StringBuilder()
+                .append(System.currentTimeMillis())  // Get current time in milliSecond
+                .append(Math.abs(new Random().nextInt())) // Add Random number to block same order at same time
+                .toString();
     }
 }
