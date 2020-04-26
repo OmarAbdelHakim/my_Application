@@ -18,6 +18,7 @@ import com.example.myapplication.EventBus.BestDealItemClick;
 import com.example.myapplication.EventBus.CounterCartEvent;
 import com.example.myapplication.EventBus.FoodItemClick;
 import com.example.myapplication.EventBus.HidFABCart;
+import com.example.myapplication.EventBus.MenuItemBack;
 import com.example.myapplication.EventBus.PopularCategoryClick;
 import com.example.myapplication.EventBus.categoryClick;
 import com.example.myapplication.Model.CategoryModel;
@@ -66,6 +67,12 @@ public class HomeActvity extends AppCompatActivity  {
 
     android.app.AlertDialog dialog;
 
+    // dy mohma
+
+    int menuClickId = -1;
+
+    //aywa al fo2 dy
+
 
     @BindView(R.id.fab)
     CounterFab fab;
@@ -111,7 +118,7 @@ public class HomeActvity extends AppCompatActivity  {
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_home, R.id.nav_menu, R.id.nav_food_list , R.id.nav_food_detail , R.id.nav_food_cart , R.id.nav_sign_out )
+                R.id.nav_home, R.id.nav_menu, R.id.nav_food_list , R.id.nav_food_detail , R.id.nav_food_cart , R.id.nav_sign_out , R.id.nav_view_orders )
                 .setDrawerLayout(drawer)
                 .build();
          navController = Navigation.findNavController(this, R.id.nav_host_fragment);
@@ -123,14 +130,42 @@ public class HomeActvity extends AppCompatActivity  {
        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
            @Override
            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-               int id=item.getItemId();
+
                //it's possible to do more actions on several items, if there is a large amount of items I prefer switch(){case} instead of if()
-               if (id==R.id.nav_sign_out){
+
+              /* if (id==R.id.nav_sign_out){
                   signOut();
+               }*/
+               switch (item.getItemId())
+               {
+                   case R.id.nav_home:
+                       if(item.getItemId() != menuClickId)
+                            navController.navigate(R.id.nav_home);
+                       break;
+                   case R.id.nav_menu:
+                       if(item.getItemId() != menuClickId)
+                            navController.navigate(R.id.nav_menu);
+                       break;
+                   case R.id.nav_food_cart:
+                       if(item.getItemId() != menuClickId)
+                           navController.navigate(R.id.nav_food_cart);
+                       break;
+                   case R.id.nav_view_orders:
+                       if(item.getItemId() != menuClickId)
+                           navController.navigate(R.id.nav_view_orders);
+                       break;
+                   case R.id.nav_sign_out:
+                       signOut();
+                       break;
+
+
+
                }
+
                NavigationUI.onNavDestinationSelected(item,navController);
                //This is for closing the drawer after acting on it
                drawer.closeDrawer(GravityCompat.START);
+               menuClickId = item.getItemId();
                return true;
            }
        });
@@ -228,10 +263,21 @@ public class HomeActvity extends AppCompatActivity  {
     public void onCartCounter  (CounterCartEvent event)
     {
         if(event.isSuccess())
-        {
+
             counterCartItem();
-        }
+
+
     }
+
+    @Subscribe (sticky = true , threadMode = ThreadMode.MAIN )
+    public void onMenuItemCallBack(MenuItemBack event )
+    {
+        menuClickId = -1;
+        if(getSupportFragmentManager().getBackStackEntryCount() > 0 )
+            getSupportFragmentManager().popBackStack();
+
+    }
+
 
 
     @Subscribe(sticky = true,threadMode = ThreadMode.MAIN)

@@ -30,6 +30,7 @@ import com.example.myapplication.Database.CartItem;
 import com.example.myapplication.Database.LocalCartDataSource;
 import com.example.myapplication.Database.cartDatabase;
 import com.example.myapplication.EventBus.CounterCartEvent;
+import com.example.myapplication.EventBus.MenuItemBack;
 import com.example.myapplication.Model.AddonModel;
 import com.example.myapplication.Model.CommentModel;
 import com.example.myapplication.Model.FoodModel;
@@ -697,5 +698,10 @@ public class FoodDetailesFragment extends Fragment implements TextWatcher {
     public void onStop() {
         compositeDisposable.clear();
         super.onStop();
+    }
+    @Override
+    public void onDestroy() {
+        EventBus.getDefault().postSticky(new MenuItemBack());
+        super.onDestroy();
     }
 }

@@ -40,6 +40,7 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment:2.2.2'
     implementation 'androidx.navigation:navigation-ui:2.2.2'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
+    implementation 'com.google.firebase:firebase-messaging:20.1.5'
     testImplementation 'junit:junit:4.13'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
@@ -74,8 +75,8 @@ dependencies {
     implementation 'org.greenrobot:eventbus:3.1.1'
 
 
-    implementation'com.github.andremion:counterfab:1.2.0'
-    implementation'com.cepheuen.elegant-number-button:lib:1.0.2'
+    implementation 'com.github.andremion:counterfab:1.2.0'
+    implementation 'com.cepheuen.elegant-number-button:lib:1.0.2'
 
     //  Room Persistence
 
@@ -83,15 +84,10 @@ dependencies {
     annotationProcessor "androidx.room:room-compiler:2.2.5"
 
     //CounterFab
-    implementation'com.github.andremion:counterfab:1.2.2-alpha1'
+    implementation 'com.github.andremion:counterfab:1.2.2-alpha1'
 
-    implementation'com.karumi:dexter:5.0.0'
+    implementation 'com.karumi:dexter:5.0.0'
     implementation 'com.google.android.gms:play-services-location:17.0.0'
 
 
-
-
-
-
 }
-

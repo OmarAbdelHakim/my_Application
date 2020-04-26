@@ -10,7 +10,11 @@ public class order {
     private boolean cod;
     private int discount;
     private List<CartItem> cartItemList;
-    private long createDatabase;
+    private long createDate;
+    private String orderNumber;
+    private int orderStatus;
+
+
 
     public order() {
     }
@@ -119,11 +123,27 @@ public class order {
         this.cartItemList = cartItemList;
     }
 
-    public long getCreateDatabase() {
-        return createDatabase;
+    public long getCreateDate() {
+        return createDate;
     }
 
-    public void setCreateDatabase(long createDatabase) {
-        this.createDatabase = createDatabase;
+    public void setCreateDate(long createDate) {
+        this.createDate = createDate;
+    }
+
+    public String getOrderNumber() {
+        return orderNumber;
+    }
+
+    public void setOrderNumber(String orderNumber) {
+        this.orderNumber = orderNumber;
+    }
+
+    public int getOrderStatus() {
+        return orderStatus;
+    }
+
+    public void setOrderStatus(int orderStatus) {
+        this.orderStatus = orderStatus;
     }
 }

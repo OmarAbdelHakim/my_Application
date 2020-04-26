@@ -27,6 +27,7 @@ import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.IdpResponse;
 import com.google.android.gms.common.internal.service.Common;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -35,6 +36,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.InstanceIdResult;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.MultiplePermissionsReport;
 import com.karumi.dexter.PermissionToken;
@@ -251,12 +254,39 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void gotoHomeActivity(UserModel userModel) {
+    private void gotoHomeActivity(UserModel userModel ) {
 
-        common.currentUser = userModel; // important you need to assigne value for it before use
-        //start Actvity Home
-        startActivity(new Intent(MainActivity.this , HomeActvity.class));
-        finish();
+
+        FirebaseInstanceId.getInstance()
+                .getInstanceId()
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(MainActivity.this, ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+                        common.currentUser = userModel; // important you need to assigne value for it before use
+
+                        //start Actvity Home
+                        startActivity(new Intent(MainActivity.this , HomeActvity.class));
+                        finish();
+
+                    }
+                }).addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+            @Override
+            public void onComplete(@NonNull Task<InstanceIdResult> task) {
+
+                common.currentUser = userModel;
+                common.UpdateToken(MainActivity.this , task.getResult().getToken());// important you need to assigne value for it before use
+
+                //start Actvity Home
+                startActivity(new Intent(MainActivity.this , HomeActvity.class));
+                finish();
+
+            }
+        });
+
+
+
+
 
     }
 

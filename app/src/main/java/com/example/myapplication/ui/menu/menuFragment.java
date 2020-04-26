@@ -23,10 +23,13 @@ import butterknife.Unbinder;
 import dmax.dialog.SpotsDialog;
 
 import com.example.myapplication.Adapter.MyCategoryItemAdapter;
+import com.example.myapplication.EventBus.MenuItemBack;
 import com.example.myapplication.Model.CategoryModel;
 import com.example.myapplication.R;
 import com.example.myapplication.common.SpaceItemDecoration;
 import com.example.myapplication.common.common;
+
+import org.greenrobot.eventbus.EventBus;
 
 import java.util.List;
 
@@ -99,5 +102,11 @@ public class menuFragment extends Fragment {
         recycler_menu.setLayoutManager(layoutManager);
         recycler_menu.addItemDecoration(new SpaceItemDecoration(0));
 
+    }
+
+    @Override
+    public void onDestroy() {
+        EventBus.getDefault().postSticky(new MenuItemBack());
+        super.onDestroy();
     }
 }

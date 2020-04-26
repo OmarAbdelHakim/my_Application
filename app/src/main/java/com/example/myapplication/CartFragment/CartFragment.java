@@ -31,6 +31,7 @@ import com.example.myapplication.Database.LocalCartDataSource;
 import com.example.myapplication.Database.cartDatabase;
 import com.example.myapplication.EventBus.CounterCartEvent;
 import com.example.myapplication.EventBus.HidFABCart;
+import com.example.myapplication.EventBus.MenuItemBack;
 import com.example.myapplication.EventBus.UpdateItemInCart;
 import com.example.myapplication.Model.CommentModel;
 import com.example.myapplication.Model.order;
@@ -741,7 +742,8 @@ cartViewModel.getMutableLiveDataCartItem().observe(getViewLifecycleOwner(), new 
     @Override
     public void onLoadTimeSuccess(order order, long estimateTimeInMs) {
 
-        order.setCreateDatabase(estimateTimeInMs);
+        order.setCreateDate(estimateTimeInMs);
+        order.setOrderStatus(0);
         writeOrderToFirebase(order);
 
     }
@@ -751,5 +753,11 @@ cartViewModel.getMutableLiveDataCartItem().observe(getViewLifecycleOwner(), new 
 
         Toast.makeText(getContext(), ""+message, Toast.LENGTH_SHORT).show();
 
+    }
+
+    @Override
+    public void onDestroy() {
+        EventBus.getDefault().postSticky(new MenuItemBack());
+        super.onDestroy();
     }
 }
