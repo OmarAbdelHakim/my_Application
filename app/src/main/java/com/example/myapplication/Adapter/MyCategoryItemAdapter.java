@@ -17,7 +17,9 @@ import com.example.myapplication.common.common;
 
 import org.greenrobot.eventbus.EventBus;
 
+import java.util.AbstractCollection;
 import java.util.List;
+import java.util.Map;
 
 import javax.microedition.khronos.opengles.GL;
 
@@ -28,6 +30,7 @@ import butterknife.ButterKnife;
 import butterknife.Unbinder;
 
 public class MyCategoryItemAdapter extends RecyclerView.Adapter<MyCategoryItemAdapter.MyViewHolder> {
+
 
     Context context;
     List<CategoryModel> categoryModelList;
@@ -68,6 +71,11 @@ public class MyCategoryItemAdapter extends RecyclerView.Adapter<MyCategoryItemAd
     @Override
     public int getItemCount() {
         return categoryModelList.size();
+    }
+
+    public List<CategoryModel> getListCategory() {
+
+        return categoryModelList;
     }
 
     public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {

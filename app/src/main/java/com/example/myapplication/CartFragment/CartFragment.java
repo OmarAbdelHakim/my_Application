@@ -8,7 +8,6 @@ import android.location.Location;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.Parcelable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -24,7 +23,6 @@ import android.widget.Toast;
 
 import com.example.myapplication.Adapter.MyCartAdapter;
 import com.example.myapplication.CallBack.ILoadTimeFromFirebaseListener;
-import com.example.myapplication.Database.CartDOA;
 import com.example.myapplication.Database.CartDataSource;
 import com.example.myapplication.Database.CartItem;
 import com.example.myapplication.Database.LocalCartDataSource;
@@ -33,9 +31,12 @@ import com.example.myapplication.EventBus.CounterCartEvent;
 import com.example.myapplication.EventBus.HidFABCart;
 import com.example.myapplication.EventBus.MenuItemBack;
 import com.example.myapplication.EventBus.UpdateItemInCart;
-import com.example.myapplication.Model.CommentModel;
-import com.example.myapplication.Model.order;
+import com.example.myapplication.Model.FCMSendData;
+import com.example.myapplication.Model.FCMresponse;
+import com.example.myapplication.Model.orderModel;
 import com.example.myapplication.R;
+import com.example.myapplication.Remote.IFCMService;
+import com.example.myapplication.Remote.RetrofitFCMClient;
 import com.example.myapplication.common.MySwipeHelper;
 import com.example.myapplication.common.common;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -59,8 +60,10 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -71,19 +74,17 @@ import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.room.FtsOptions;
-import androidx.room.OnConflictStrategy;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import butterknife.Unbinder;
+import io.reactivex.Scheduler;
 import io.reactivex.Single;
 import io.reactivex.SingleObserver;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
-import io.reactivex.internal.observers.LambdaObserver;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 
@@ -96,6 +97,8 @@ public class CartFragment extends Fragment implements ILoadTimeFromFirebaseListe
     private CartViewModel cartViewModel;
 
     private CartDataSource cartDataSource;
+
+    IFCMService ifcmService;
 
     LocationRequest locationRequest;
     LocationCallback locationCallback;
@@ -270,7 +273,7 @@ compositeDisposable.add(cartDataSource.getAllCart(common.currentUser.getUid())
             public void onSuccess(Double totalPrice) {
 
                 double finalPrice = totalPrice; // we will modify this formula for discount late
-                order order = new order();
+                orderModel order = new orderModel();
                 order.setUserId(common.currentUser.getUid());
                 order.setUserName(common.currentUser.getName());
                 order.setUserPhone(common.currentUser.getPhone());
@@ -313,7 +316,8 @@ compositeDisposable.add(cartDataSource.getAllCart(common.currentUser.getUid())
 
             @Override
             public void onError(Throwable e) {
-              //  Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+                if(!e.getMessage().contains("Query returned empty result set"))
+                    Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
 
             }
         });
@@ -330,7 +334,7 @@ compositeDisposable.add(cartDataSource.getAllCart(common.currentUser.getUid())
 
     }
 
-    private void syncLocationTimeWithGlobalTime(order order) {
+    private void syncLocationTimeWithGlobalTime(orderModel order) {
 
         final DatabaseReference offsetRef =  FirebaseDatabase.getInstance().getReference(".info/serverTimeOffset");
         offsetRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -357,7 +361,7 @@ compositeDisposable.add(cartDataSource.getAllCart(common.currentUser.getUid())
         });
     }
 
-    private void writeOrderToFirebase(order order) {
+    private void writeOrderToFirebase(orderModel order) {
 
         FirebaseDatabase.getInstance()
                 .getReference(common.ORDER_REF)
@@ -385,9 +389,34 @@ compositeDisposable.add(cartDataSource.getAllCart(common.currentUser.getUid())
 
                             @Override
                             public void onSuccess(Integer integer) {
+                                Map<String,String> notiData = new HashMap<>();
+                                notiData.put(common.NOTI_TITLE,"New Order");
+                                notiData.put(common.NOTI_CONTENT , "You have new order from" + common.currentUser.getPhone());
+
+                                FCMSendData sendData = new FCMSendData(common.CreateTopicOrder() , notiData);
+
+                                compositeDisposable.add(ifcmService.sendNotification(sendData)
+                                        .subscribeOn(Schedulers.io())
+                                        .observeOn(AndroidSchedulers.mainThread())
+                                        .subscribe(new Consumer<FCMresponse>() {
+                                            @Override
+                                            public void accept(FCMresponse fcMresponse) throws Exception {
+                                                Toast.makeText(getContext(), "Order placed Successfully!", Toast.LENGTH_SHORT).show();
+                                                EventBus.getDefault().postSticky(new CounterCartEvent(true));
+                                            }
+                                        }, new Consumer<Throwable>() {
+                                            @Override
+                                            public void accept(Throwable throwable) throws Exception {
+                                                Toast.makeText(getContext(), "Order was send but failure to send notification!", Toast.LENGTH_SHORT).show();
+                                                EventBus.getDefault().postSticky(new CounterCartEvent(true));
+                                            }
+                                        }));
+
+
+
 
                                 //clean success
-                                Toast.makeText(getContext(), "Order placed Successfully!", Toast.LENGTH_SHORT).show();
+
 
                             }
 
@@ -445,6 +474,8 @@ compositeDisposable.add(cartDataSource.getAllCart(common.currentUser.getUid())
         cartViewModel =
                 ViewModelProviders.of(this).get(CartViewModel.class);
         View root = inflater.inflate(R.layout.fragment_cardfood, container, false);
+
+        ifcmService = RetrofitFCMClient.getInstance().create(IFCMService.class);
 
         listener = this;
 
@@ -586,10 +617,8 @@ cartViewModel.getMutableLiveDataCartItem().observe(getViewLifecycleOwner(), new 
                     public void onError(Throwable e) {
 
                         if(!e.getMessage().contains("Query returned empty"))
-                        {
+                            Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
 
-                        }
-                           // Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
 
                     }
                 });
@@ -732,15 +761,14 @@ cartViewModel.getMutableLiveDataCartItem().observe(getViewLifecycleOwner(), new 
                     @Override
                     public void onError(Throwable e) {
 
-                      //  Toast.makeText(getContext(), "[SUM CART]"+e.getMessage(), Toast.LENGTH_SHORT).show();
-
-                    }
+                        if(!e.getMessage().contains("Query returned empty result set"))
+                            Toast.makeText(getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();                    }
                 });
 
     }
 
     @Override
-    public void onLoadTimeSuccess(order order, long estimateTimeInMs) {
+    public void onLoadTimeSuccess(orderModel order, long estimateTimeInMs) {
 
         order.setCreateDate(estimateTimeInMs);
         order.setOrderStatus(0);

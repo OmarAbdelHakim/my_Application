@@ -8,10 +8,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.example.myapplication.Model.order;
+import com.example.myapplication.Model.orderModel;
 import com.example.myapplication.R;
 import com.example.myapplication.common.common;
-import com.google.android.material.badge.BadgeUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -28,11 +27,11 @@ public class MyOrderAdapter extends RecyclerView.Adapter<MyOrderAdapter.MyViewHo
 
 
     private Context context;
-    private List<order> orderList;
+    private List<orderModel> orderList;
     private Calendar calendar;
     private SimpleDateFormat simpleDateFormat;
 
-    public MyOrderAdapter(Context context, List<order> orderList) {
+    public MyOrderAdapter(Context context, List<orderModel> orderList) {
         this.context = context;
         this.orderList = orderList;
         calendar = Calendar.getInstance();

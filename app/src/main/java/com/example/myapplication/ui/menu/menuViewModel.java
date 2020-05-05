@@ -43,7 +43,7 @@
 
         }
 
-        private void loadCategories() {
+        public void loadCategories() {
 
             List<CategoryModel> templist = new ArrayList<>();
             DatabaseReference categoryRef = FirebaseDatabase.getInstance().getReference(common.CATEGORY_REF);

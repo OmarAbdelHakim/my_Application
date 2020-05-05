@@ -188,7 +188,7 @@ public class common {
             notificationChannel.setDescription(" Eat It V2 ");
             notificationChannel.enableLights(true);
             notificationChannel.setLightColor(Color.RED);
-            notificationChannel.setVibrationPattern(new long[] {0,100,500,1000});
+            notificationChannel.setVibrationPattern(new long[] {0,1000,500,1000});
             notificationChannel.enableVibration(true);
 
 
@@ -225,5 +225,9 @@ public class common {
                     }
                 });
 
+    }
+
+    public static String CreateTopicOrder() {
+        return new StringBuilder("/topics/new_order").toString();
     }
 }

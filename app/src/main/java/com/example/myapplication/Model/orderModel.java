@@ -4,7 +4,7 @@ import com.example.myapplication.Database.CartItem;
 
 import java.util.List;
 
-public class order {
+public class orderModel {
     private String userId , userName , userPhone ,shippingAddress , comment , transactionId;
     private double lat , lng , totalPayment , finalPayment;
     private boolean cod;
@@ -16,7 +16,7 @@ public class order {
 
 
 
-    public order() {
+    public orderModel() {
     }
 
     public String getUserId() {

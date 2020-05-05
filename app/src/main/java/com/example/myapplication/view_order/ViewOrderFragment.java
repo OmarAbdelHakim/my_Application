@@ -5,15 +5,11 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AnimationUtils;
-import android.view.animation.LayoutAnimationController;
 import android.widget.Toast;
 
-import com.example.myapplication.Adapter.MyFoodListAdapter;
 import com.example.myapplication.Adapter.MyOrderAdapter;
 import com.example.myapplication.CallBack.ILoadOrderCallBackListener;
-import com.example.myapplication.Model.FoodModel;
-import com.example.myapplication.Model.order;
+import com.example.myapplication.Model.orderModel;
 import com.example.myapplication.R;
 import com.example.myapplication.common.common;
 import com.google.firebase.database.DataSnapshot;
@@ -25,9 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -83,7 +77,7 @@ public class ViewOrderFragment extends Fragment implements ILoadOrderCallBackLis
     }
 
     private void LoadOrderFromFirebase() {
-        List<order> orderList = new ArrayList<>();
+        List<orderModel> orderList = new ArrayList<>();
         FirebaseDatabase.getInstance().getReference(common.ORDER_REF)
                 .orderByChild("userId")
                 .equalTo(common.currentUser.getUid())
@@ -95,7 +89,7 @@ public class ViewOrderFragment extends Fragment implements ILoadOrderCallBackLis
                         for(DataSnapshot orderSnapShop : dataSnapshot.getChildren())
                         {
 
-                            order order = orderSnapShop.getValue(order.class);
+                            orderModel order = orderSnapShop.getValue(orderModel.class);
                             order.setOrderNumber(orderSnapShop.getKey());
 
                             orderList.add(order);
@@ -127,7 +121,7 @@ public class ViewOrderFragment extends Fragment implements ILoadOrderCallBackLis
 
 
     @Override
-    public void onLoadOrderSucceeded(List<order> orderList) {
+    public void onLoadOrderSucceeded(List<orderModel> orderList) {
         dialog.dismiss();
         viewOrderViewModel.setMutableLiveDataOrderList(orderList);
         
